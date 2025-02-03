@@ -1,0 +1,63 @@
+services:
+  postgres:
+    image: postgres:17.2
+    container_name: postgres_container
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: music
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-net
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d music" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrator:
+    image: golang:1.23.2-alpine
+    container_name: migrator
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: sh -c "while ! nc -z postgres 5432; do sleep 1; done; go run ./cmd/migrator/main.go"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-net
+    env_file:
+      - .env
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: application
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    networks:
+      - app-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  postgres_data:
+
+networks:
+  app-net:
+    driver: bridge

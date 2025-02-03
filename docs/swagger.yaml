@@ -1,0 +1,15 @@
+host: localhost:8000
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+    url: http://www.example.com/support
+  description: This API allows you to manage songs in the library system.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Library API
+  version: "1.0"
+paths: {}
+swagger: "2.0"
