@@ -59,7 +59,7 @@ type Response struct {
 //	@Produce		json
 //	@Param			name	query		string		false	"Название песни для фильтра"
 //	@Param			group	query		string		false	"Название группы для фильтра"
-//	@Param			year	query		string		false	"Год для фильтра"	Format(dd-mm-yy)
+//	@Param			year	query		string		false	"Год для фильтра"	Format(yyyy-mm-dd)
 //	@Param			page	query		string		false	"Номер страницы"
 //	@Success		200		{array}		RequestSong	"В случае успеха сервер вернёт массив JSON"
 //	@Failure		400		{object}	Response	"{Status: "ERROR", Error: msg}"

@@ -1,15 +1,208 @@
-host: localhost:8000
+definitions:
+  handlers.Request:
+    properties:
+      group:
+        example: Кишлак
+        type: string
+      song:
+        example: Первый миллион
+        type: string
+    required:
+    - group
+    - song
+    type: object
+  handlers.RequestSong:
+    properties:
+      group:
+        example: Кишлак
+        type: string
+      link:
+        example: https://youtu.be/SdcNXIPP9UY?si=1QIYeuOSlNsDtZaS
+        type: string
+      release_date:
+        example: "2024-11-29T10:00:00+03:00"
+        type: string
+      song:
+        example: Первый миллион
+        type: string
+      text:
+        example: текст песни
+        type: string
+    required:
+    - group
+    - link
+    - release_date
+    - song
+    - text
+    type: object
+  handlers.Response:
+    properties:
+      error:
+        type: string
+      status:
+        type: string
+    type: object
 info:
-  contact:
-    email: support@example.com
-    name: API Support
-    url: http://www.example.com/support
-  description: This API allows you to manage songs in the library system.
-  license:
-    name: Apache 2.0
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
-  termsOfService: http://swagger.io/terms/
-  title: Library API
-  version: "1.0"
-paths: {}
+  contact: {}
+paths:
+  /songs:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет песню из библиотеки по названию и группе
+      parameters:
+      - description: Данные необходимые для удаления песни
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.Request'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Ответ в случае успешного удаления {Status: "OK"}'
+          schema:
+            $ref: '#/definitions/handlers.Response'
+        "400":
+          description: 'Ответ в случае возникновения ошибки {Status: "ERROR", Error:
+            msg}'
+          schema:
+            $ref: '#/definitions/handlers.Response'
+      summary: Удалить песню из библиотеки
+      tags:
+      - songs
+    get:
+      consumes:
+      - application/json
+      description: |-
+        Метод возвращает список песен, с фильтрацией и пагинацией(количество песен на странице определено в servise.SearchSongs и является константным).
+        Номер страницы является параметром запроса. Если не указать страницу, то вернётся первые 10 песен подходящие по фильтру,
+        если же не указать ни одного фильтра, то метод вернёт первые 10 песен.
+      parameters:
+      - description: Название песни для фильтра
+        in: query
+        name: name
+        type: string
+      - description: Название группы для фильтра
+        in: query
+        name: group
+        type: string
+      - description: Год для фильтра
+        format: yyyy-mm-dd
+        in: query
+        name: year
+        type: string
+      - description: Номер страницы
+        in: query
+        name: page
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: В случае успеха сервер вернёт массив JSON
+          schema:
+            items:
+              $ref: '#/definitions/handlers.RequestSong'
+            type: array
+        "400":
+          description: '{Status: "ERROR", Error: msg}'
+          schema:
+            $ref: '#/definitions/handlers.Response'
+      summary: Получить песни с фильтрацией по всем полям и пагинацией
+      tags:
+      - songs
+    post:
+      consumes:
+      - application/json
+      description: |-
+        После получения запроса сервис делает API запрос, если API даёт ответ с дополнительной информацией о песне,
+        то мы сохраняем данные в Postgres. Если же API возвращает ошибку, то мы ничего не сохраняем и возвращаем ошибку.
+      parameters:
+      - description: Данные необходимые для добавления.
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.Request'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Ответ сервера, при успешном сохранении {Status: "OK"}'
+          schema:
+            $ref: '#/definitions/handlers.Response'
+        "400":
+          description: '{Status: "ERROR", Error: msg}'
+          schema:
+            $ref: '#/definitions/handlers.Response'
+      summary: Добавить песню в библиотеку
+      tags:
+      - songs
+    put:
+      consumes:
+      - application/json
+      description: Изменяет данные песни. В качестве индикатора использует название
+        песни и группу
+      parameters:
+      - description: Данные необходимые для изменения данных
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RequestSong'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Ответ в случае успешного изменения {Status: "OK"}'
+          schema:
+            $ref: '#/definitions/handlers.Response'
+        "400":
+          description: 'Ответ в случае возникновения ошибки {Status: "ERROR", Error:
+            msg}'
+          schema:
+            $ref: '#/definitions/handlers.Response'
+      summary: Изменить данные песни
+      tags:
+      - songs
+  /songs/verse:
+    get:
+      consumes:
+      - application/json
+      description: Метод вернёт текс песни c пагинацией по куплетам строкой.
+      parameters:
+      - description: Название песни для её поиска
+        in: query
+        name: name
+        required: true
+        type: string
+      - description: Название группы для её поиска
+        in: query
+        name: group
+        required: true
+        type: string
+      - description: Количество строк которе необходимо вернуть (по умолчанию 1)
+        in: query
+        name: verse
+        type: string
+      - description: С какой строки возвращать (по умолчанию 1)
+        in: query
+        name: page
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: В случае успеха сервер венёт строку
+          schema:
+            type: string
+        "400":
+          description: '{Status: "ERROR", Error: msg}'
+          schema:
+            $ref: '#/definitions/handlers.Response'
+      summary: Получить текст песни с пагинацией по куплетам
+      tags:
+      - songs
 swagger: "2.0"
